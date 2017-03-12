@@ -102,7 +102,7 @@ filterY:: Set.Set(Set.Set State) -> Set.Set State -> Set.Set(Set.Set State)
 filterY p x = Set.filter (\y->( not(null(Set.intersection x y)) && not(null(Set.difference y x)) )) p
 
 modifyY:: Set.Set(Set.Set State) -> Set.Set State -> Set.Set(Set.Set State)
-modifyY mod_y x = Set.union (Set.map (\y->Set.intersection x y) mod_y) (Set.map (\y->Set.difference x y) mod_y)
+modifyY mod_y x = Set.union (Set.map (\y->Set.intersection x y) mod_y) (Set.map (\y->Set.difference y x) mod_y)
 
 hopcroftX:: [Transition] -> Symbol -> Set.Set State -> Set.Set State
 hopcroftX trans sym dsts = getMultTransSrc $ filterTransByMultDst dsts (filterTransBySym sym trans)
