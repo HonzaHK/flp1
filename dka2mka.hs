@@ -7,8 +7,11 @@ import Data.Typeable --typeOf
 import Data.List.Split --splitOn
 import Data.List -- \\
 import qualified Data.Set as Set
+import Debug.Trace
 
 import FaModule
+
+debug = flip trace
 
 helpText = "\nFIT VUTBR - FLP - project 1 - dka2mka\nauthor: Jan Kubis / xkubis13\nusage: ./dka2mka [ -i | -t ] [ FILE ]"
 printHelp = putStrLn helpText
@@ -75,34 +78,42 @@ minimizeFa fa = do--Fa {
 --} where
     print $ hopcroft (Set.fromList [fa_fin fa, fa_nonFin fa]) (Set.singleton (fa_fin fa)) fa
 
-    --newStates = Set.fromList (map (\x->unwords $ Set.toList x) (distinguish [fa_fin fa, fa_nonFin fa] [fa_fin fa] fa))
-
 hopcroft:: Set.Set(Set.Set State) -> Set.Set(Set.Set State) -> Fa -> Set.Set(Set.Set State)
 hopcroft p w fa
     | (Set.size w)==0 = p
     | otherwise = hopcroft mod_p mod_w fa
-                    where   mod_p = modifyP p w fa
-                            mod_w = modifyW p w fa
+                    where   (mod_p,(a,mod_w)) = hopcroftC (p,Set.deleteFindMin w) fa (fa_alpha fa)
 
-modifyP:: Set.Set(Set.Set State) -> Set.Set(Set.Set State) -> Fa -> Set.Set(Set.Set State)
-modifyP p w fa = Set.union old_y (modifyY mod_y x)
-                    where   wFirst = Set.elemAt 0 w
-                            wRest = Set.deleteAt 0 w
-                            x = hopcroftX (fa_trans fa) "b" wFirst
-                            mod_y = filterY p x
-                            old_y = Set.difference p mod_y
+-- p,w have to be in tuple - recursion (param type == ret type)
+hopcroftC:: (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State))) -> Fa -> Alphabet -> (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State)))
+hopcroftC (p,(a,w)) _ [] = (p,(a,w))
+hopcroftC (p,(a,w)) fa (c:cs) = hopcroftC (modify_wp (p,(a,w)) fa c) fa cs --`debug` (show a ++ show p)
 
+modify_wp:: (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State))) -> Fa -> Symbol -> (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State)))
+modify_wp (p,(a,w)) fa c = (modify_p old_y mod_y x,(a,modify_w w mod_y x)) `debug` (show mod_y)
+                            where   x = hopcroftX (fa_trans fa) c a
+                                    mod_y = filterY p x
+                                    old_y = Set.difference p mod_y
 
-modifyW:: Set.Set(Set.Set State) -> Set.Set(Set.Set State) -> Fa -> Set.Set(Set.Set State)
-modifyW p w fa = Set.empty
-                    where   wFirst = Set.elemAt 0 w
-                            wRest = Set.deleteAt 0 w
+modify_p:: Set.Set(Set.Set State) -> Set.Set(Set.Set State) -> Set.Set State -> Set.Set(Set.Set State)
+modify_p old_y mod_y x = Set.union old_y (replaceY mod_y x)
+
+modify_w w mod_y x = Set.map cond mod_y
+                        where cond y = if (elem y w)
+                                        then setXor x y
+                                        else    if (Set.size(Set.intersection x y) <= Set.size(Set.difference y x))
+                                                then Set.intersection x y
+                                                else Set.difference y x
+
+-- careful, y \\ x !!!!
+setXor:: Ord a => Set.Set a -> Set.Set a -> Set.Set a
+setXor x y = Set.union (Set.intersection x y) (Set.difference y x)
 
 filterY:: Set.Set(Set.Set State) -> Set.Set State -> Set.Set(Set.Set State)
 filterY p x = Set.filter (\y->( not(null(Set.intersection x y)) && not(null(Set.difference y x)) )) p
 
-modifyY:: Set.Set(Set.Set State) -> Set.Set State -> Set.Set(Set.Set State)
-modifyY mod_y x = Set.union (Set.map (\y->Set.intersection x y) mod_y) (Set.map (\y->Set.difference y x) mod_y)
+replaceY:: Set.Set(Set.Set State) -> Set.Set State -> Set.Set(Set.Set State)
+replaceY mod_y x = Set.union (Set.map (\y->Set.intersection x y) mod_y) (Set.map (\y->Set.difference y x) mod_y)
 
 hopcroftX:: [Transition] -> Symbol -> Set.Set State -> Set.Set State
 hopcroftX trans sym dsts = getMultTransSrc $ filterTransByMultDst dsts (filterTransBySym sym trans)
@@ -120,6 +131,7 @@ filterTransByDst state trans = filter (\t->(tr_dst t == state)) trans
 getMultTransSrc:: [Transition] -> Set.Set State
 getMultTransSrc trans = Set.fromList $ map (\t->(tr_src t)) trans
 
+testf = (1,2)
 
 main :: IO()
 main = do
@@ -134,7 +146,5 @@ main = do
         minimizeFa fa-- print $ fa_states $ minimizeFa fa
     else
         printFormatFa fa
-
-    --print $ typeOf $ hopcroftX (fa_trans fa) "b" (Set.fromList ["1","6"])
 
     return ()

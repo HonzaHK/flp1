@@ -5,6 +5,7 @@ module FaModule (
     Transition(..),
     State,
     Symbol,
+    Alphabet,
     printFormatFa,
     validSymbols,
     isFaValid
