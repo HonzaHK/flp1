@@ -67,16 +67,36 @@ parseTrans t
             to = exploded!!2
 
 
-minimizeFa:: Fa -> IO()
-minimizeFa fa = do--Fa {
---    fa_states= newStates,
---    fa_alpha= fa_alpha(fa),
---    fa_trans= [Transition{tr_src="a",tr_sym="b",tr_dst="c"}],
---    fa_init="i",
---    fa_fin= Set.fromList ["fin"],
---    fa_nonFin=  Set.fromList ["non-fin"]
---} where
-    print $ hopcroft (Set.fromList [fa_fin fa, fa_nonFin fa]) (Set.singleton (fa_fin fa)) fa
+minimizeFa:: Fa -> Fa
+minimizeFa fa = Fa {
+    fa_states= states_min_f,
+    fa_alpha= fa_alpha(fa),
+    fa_trans= trans_min,
+    fa_init= init_min_f,
+    fa_fin= fin_min_f,
+    fa_nonFin=  Set.fromList ["non-fin"]
+}   where   states_min = hopcroft (Set.fromList [fa_fin fa, fa_nonFin fa]) (Set.singleton (fa_fin fa)) fa
+            states_min_f = Set.map (\s->unwords (Set.toList s)) states_min
+            init_min = choose_init states_min (fa_init fa)
+            init_min_f = unwords (Set.toList init_min)
+            fin_min = choose_fin states_min (fa_fin fa)
+            fin_min_f = Set.map (\s->unwords (Set.toList s)) fin_min
+            trans_min = gen_trans states_min (fa_trans fa)
+
+choose_init:: Set.Set(Set.Set State) -> State -> Set.Set(State)
+choose_init states_min init_old = Set.elemAt 0 $ Set.filter (\s->Set.member init_old s) states_min
+
+choose_fin:: Set.Set(Set.Set State) -> Set.Set State -> Set.Set(Set.Set State)
+choose_fin states_min fin_old = Set.filter (\s->not(null(Set.intersection s fin_old))) states_min
+
+gen_trans:: Set.Set(Set.Set State) -> [Transition] -> [Transition]
+gen_trans states_min trans = map gen_t trans
+                                where   gen_t t = Transition { tr_src=new_src, tr_sym=(tr_sym t),tr_dst=new_dst}
+                                                    where   new_src = find_adq_min_state states_min $ tr_src t
+                                                            new_dst = find_adq_min_state states_min $ tr_dst t
+
+find_adq_min_state:: Set.Set(Set.Set State) -> State -> State
+find_adq_min_state states_min s = unwords $ Set.toList $ Set.elemAt 0 $ Set.filter (\sm->(Set.member s sm)) states_min
 
 hopcroft:: Set.Set(Set.Set State) -> Set.Set(Set.Set State) -> Fa -> Set.Set(Set.Set State)
 hopcroft p w fa
@@ -90,7 +110,7 @@ hopcroftC (p,(a,w)) _ [] = (p,(a,w))
 hopcroftC (p,(a,w)) fa (c:cs) = hopcroftC (modify_wp (p,(a,w)) fa c) fa cs --`debug` (show a ++ show p)
 
 modify_wp:: (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State))) -> Fa -> Symbol -> (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State)))
-modify_wp (p,(a,w)) fa c = (modify_p old_y mod_y x,(a,modify_w w mod_y x)) `debug` (show mod_y)
+modify_wp (p,(a,w)) fa c = (modify_p old_y mod_y x,(a,modify_w w mod_y x)) --`debug` (show p)
                             where   x = hopcroftX (fa_trans fa) c a
                                     mod_y = filterY p x
                                     old_y = Set.difference p mod_y
@@ -143,8 +163,10 @@ main = do
     when (not $ isFaValid fa) $ error "Invalid input!"
     --error "-------"
     if (isArgsMinimize argv) then do
-        minimizeFa fa-- print $ fa_states $ minimizeFa fa
+        print $ minimizeFa fa
     else
         printFormatFa fa
 
+    let t = Set.fromList ["2","2"]
+    print t
     return ()
