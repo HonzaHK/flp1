@@ -1,4 +1,4 @@
--- FIT VUTBR - FLP - project 1
+-- FIT VUTBR - FLP - project1 - dka-2-mka
 -- Jan Kubis / xkubis13
 module FaModule ( 
     Fa(..),

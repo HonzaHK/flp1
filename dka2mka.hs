@@ -151,8 +151,6 @@ filterTransByDst state trans = filter (\t->(tr_dst t == state)) trans
 getMultTransSrc:: [Transition] -> Set.Set State
 getMultTransSrc trans = Set.fromList $ map (\t->(tr_src t)) trans
 
-testf = (1,2)
-
 main :: IO()
 main = do
     argv <- getArgs
