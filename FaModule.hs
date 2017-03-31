@@ -16,12 +16,12 @@ import Data.List --intersperse
 import qualified Data.Set as Set
 
 validSymbols:: Alphabet
-validSymbols = map (\c->[c]) ['a'..'b']
+validSymbols = Set.fromList( map (\c->[c]) ['a'..'z'] )
 
 type State = String
 type Symbol = String
-type Alphabet = [Symbol]
-data Transition = Transition { tr_src::State,tr_sym::Symbol,tr_dst::State }
+type Alphabet = Set.Set Symbol
+data Transition = Transition { tr_src::State,tr_sym::Symbol,tr_dst::State } deriving (Eq)
 data Fa = Fa {
     fa_states::Set.Set State,
     fa_alpha::Alphabet,

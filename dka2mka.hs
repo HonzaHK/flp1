@@ -1,4 +1,4 @@
--- FIT VUTBR - FLP - project 1
+-- FIT VUTBR - FLP - project1 - dka-2-mka
 -- Jan Kubis / xkubis13
 import System.Environment
 import System.Exit
@@ -41,7 +41,7 @@ getInput filename = readFile filename
 parseInput :: [[Char]] -> Fa
 parseInput (l_states:l_init:l_final:l_trans) = Fa {
         fa_states=allStates,
-        fa_alpha=validSymbols,
+        fa_alpha=alpha,
         fa_trans=allTrans,
         fa_init=initState,
         fa_fin=finStates,
@@ -49,6 +49,7 @@ parseInput (l_states:l_init:l_final:l_trans) = Fa {
     }
     where   allStates = parseAllStates l_states
             allTrans = parseAllTrans l_trans
+            alpha = parseAlpha allTrans
             initState = parseInitState l_init
             finStates = parseFinStates l_final
 
@@ -65,23 +66,25 @@ parseTrans t
             from = exploded!!0
             over = exploded!!1
             to = exploded!!2
+parseAlpha trans = Set.fromList(map (\t->tr_sym t) trans)
 
 
 minimizeFa:: Fa -> Fa
 minimizeFa fa = Fa {
     fa_states= states_min_f,
-    fa_alpha= fa_alpha(fa),
+    fa_alpha= fa_alpha fa,
     fa_trans= trans_min,
     fa_init= init_min_f,
     fa_fin= fin_min_f,
-    fa_nonFin=  Set.fromList ["non-fin"]
+    fa_nonFin=  nonFin_min
 }   where   states_min = hopcroft (Set.fromList [fa_fin fa, fa_nonFin fa]) (Set.singleton (fa_fin fa)) fa
             states_min_f = Set.map (\s->unwords (Set.toList s)) states_min
             init_min = choose_init states_min (fa_init fa)
             init_min_f = unwords (Set.toList init_min)
             fin_min = choose_fin states_min (fa_fin fa)
             fin_min_f = Set.map (\s->unwords (Set.toList s)) fin_min
-            trans_min = gen_trans states_min (fa_trans fa)
+            trans_min = nub $ gen_trans states_min (fa_trans fa)
+            nonFin_min = Set.fromList ["aaaa"]
 
 choose_init:: Set.Set(Set.Set State) -> State -> Set.Set(State)
 choose_init states_min init_old = Set.elemAt 0 $ Set.filter (\s->Set.member init_old s) states_min
@@ -106,9 +109,10 @@ hopcroft p w fa
 
 -- p,w have to be in tuple - recursion (param type == ret type)
 hopcroftC:: (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State))) -> Fa -> Alphabet -> (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State)))
-hopcroftC (p,(a,w)) _ [] = (p,(a,w))
-hopcroftC (p,(a,w)) fa (c:cs) = hopcroftC (modify_wp (p,(a,w)) fa c) fa cs --`debug` (show a ++ show p)
-
+hopcroftC (p,(a,w)) fa cIter = if (Set.size cIter) == 0
+                                    then (p, (a,w))
+                                    else hopcroftC (modify_wp (p,(a,w)) fa c) fa cs --`debug` (show a ++ show p)
+                                where   (c,cs) = Set.deleteFindMin cIter
 modify_wp:: (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State))) -> Fa -> Symbol -> (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State)))
 modify_wp (p,(a,w)) fa c = (modify_p old_y mod_y x,(a,modify_w w mod_y x)) --`debug` (show p)
                             where   x = hopcroftX (fa_trans fa) c a
@@ -159,12 +163,12 @@ main = do
     input <- getInput $ getArgsFilename argv
     let fa = parseInput $ lines input
     when (not $ isFaValid fa) $ error "Invalid input!"
+    
+    --print $ fa_alpha fa
     --error "-------"
     if (isArgsMinimize argv) then do
-        print $ minimizeFa fa
+        printFormatFa $ minimizeFa fa
     else
         printFormatFa fa
 
-    let t = Set.fromList ["2","2"]
-    print t
     return ()
