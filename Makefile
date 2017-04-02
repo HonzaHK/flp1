@@ -1,7 +1,7 @@
 # FIT VUTBR - FLP - project1 - dka-2-mka
 # Jan Kubis / xkubis13
 EXECUTABLE=dka-2-mka
-SOURCE=dka2mka.hs FaModule.hs
+SOURCE=dka-2-mka.hs FaModule.hs
 ZIPFILE=flp-fun-xkubis13.zip
 
 default: clear

@@ -15,20 +15,25 @@ import Data.Char --isDigit
 import Data.List --intersperse
 import qualified Data.Set as Set
 
+--further usage -- input symbol regex
 validSymbols:: Alphabet
 validSymbols = Set.fromList( map (\c->[c]) ['a'..'z'] )
 
+--aliases for fsm members for better recognizition
 type State = String
 type Symbol = String
 type Alphabet = Set.Set Symbol
+
+--data structure for transition
 data Transition = Transition { tr_src::State,tr_sym::Symbol,tr_dst::State } deriving (Eq)
+
+--data structure for fsm
 data Fa = Fa {
     fa_states::Set.Set State,
     fa_alpha::Alphabet,
     fa_trans::[Transition],
     fa_init::State,
     fa_fin:: Set.Set State,
-
     fa_nonFin:: Set.Set State
 }
 
@@ -57,6 +62,7 @@ printFormatFa fa = do
     putStrLn d
 
 
+--syntax control (token regexes), semantics control -- all boolean
 isStateDescrValid:: State -> Bool
 isStateDescrValid s = all isDigit s
 isStateDefined:: State -> Fa -> Bool
@@ -70,7 +76,6 @@ isTransValid tr fa =   isStateDefined s0 fa &&
                         isInSymDefined a fa &&
                         isStateDefined s1 fa
                         where (s0,a,s1) = (tr_src tr,tr_sym tr,tr_dst tr)
-
 isStatesValid:: Fa -> Bool
 isStatesValid fa = all isStateDescrValid (fa_states fa)
 isAlphabetValid:: Fa -> Bool

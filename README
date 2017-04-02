@@ -1,3 +1,18 @@
 -- FIT VUTBR - FLP - project1 - dka-2-mka
 -- Jan Kubis / xkubis13
 
+Nazvy nove vytvorenych stavu jsou tvoreny sloucenim nazvu puvodnich stavu, ze kterych je novy stav tvoren. Pokud se tedy napriklad podarilo sloucit stavy "1" "2" a "3", vytvoreny stav ponese nazev "123" (predpokladam, ze se bude testovat, zda je muj minimalizovany automat isomorfni s referencnim). Takto pojmenovany stav se dobre kontroluje s rucne vypocitanym resenim.
+
+Minimalizace probiha pomoci Hopcroftova algoritmu dostupneho na strankach wikipedie:
+https://en.wikipedia.org/wiki/DFA_minimization
+
+K testovani jsem pouzival sadu testu dostupnou na github:
+https://github.com/vokracko/FLP-DKA-2-MKA-test
+
+Po samotne minimalizaci provadim jeste redukci stavu -- odstranim takove, ze kterych uz se nelze nikdy dostat do finalniho stavu (a take odpovidajici pravidla). Zminovane testy (ktere k minimalizaci pouzivaji knihovnu OpenFST) tuto upravu vyzaduji. 
+Vypocet stavu, ze kterych se do finalniho dostat da, je nasledujici: 
+	1) mnozina Xo = finalni stavy 
+	2) mnozina Xn = Xo sjednoceno (stavy z levych stran pravidel, na jejichz prave strane je stav z Xo)
+	3) pokud (Xo == Xn) -> v Xo je vysledek, pokud (Xo != Xn) -> goto 1) 
+	Chceme-li ziskat stavy, ktere se maji odstranit, spocitame doplnek Xo vuci mnozine vsech stavu
+Situace, kdy by se neslo dostat do finalniho ani z pocatecniho, osetrena neni -- predpokladam, ze reseni takovych krajnich pripadu neni naplni tohoto projektu.
