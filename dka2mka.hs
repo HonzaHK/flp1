@@ -78,11 +78,11 @@ minimizeFa fa = Fa {
     fa_fin= fin_min_f,
     fa_nonFin=  nonFin_min
 }   where   states_min = hopcroft (Set.fromList [fa_fin fa, fa_nonFin fa]) (Set.singleton (fa_fin fa)) fa
-            states_min_f = Set.map (\s->unwords (Set.toList s)) states_min
+            states_min_f = Set.map (\s->intercalate "" (Set.toList s)) states_min
             init_min = choose_init states_min (fa_init fa)
-            init_min_f = unwords (Set.toList init_min)
+            init_min_f = intercalate "" (Set.toList init_min)
             fin_min = choose_fin states_min (fa_fin fa)
-            fin_min_f = Set.map (\s->unwords (Set.toList s)) fin_min
+            fin_min_f = Set.map (\s->intercalate "" (Set.toList s)) fin_min
             trans_min = nub $ gen_trans states_min (fa_trans fa)
             nonFin_min = Set.fromList ["aaaa"]
 
@@ -99,7 +99,7 @@ gen_trans states_min trans = map gen_t trans
                                                             new_dst = find_adq_min_state states_min $ tr_dst t
 
 find_adq_min_state:: Set.Set(Set.Set State) -> State -> State
-find_adq_min_state states_min s = unwords $ Set.toList $ Set.elemAt 0 $ Set.filter (\sm->(Set.member s sm)) states_min
+find_adq_min_state states_min s = intercalate "" $ Set.toList $ Set.elemAt 0 $ Set.filter (\sm->(Set.member s sm)) states_min
 
 hopcroft:: Set.Set(Set.Set State) -> Set.Set(Set.Set State) -> Fa -> Set.Set(Set.Set State)
 hopcroft p w fa
@@ -111,10 +111,11 @@ hopcroft p w fa
 hopcroftC:: (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State))) -> Fa -> Alphabet -> (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State)))
 hopcroftC (p,(a,w)) fa cIter = if (Set.size cIter) == 0
                                     then (p, (a,w))
-                                    else hopcroftC (modify_wp (p,(a,w)) fa c) fa cs --`debug` (show a ++ show p)
+                                    else hopcroftC (modify_wp (p,(a,w)) fa c) fa cs
                                 where   (c,cs) = Set.deleteFindMin cIter
+
 modify_wp:: (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State))) -> Fa -> Symbol -> (Set.Set(Set.Set State),(Set.Set State,Set.Set(Set.Set State)))
-modify_wp (p,(a,w)) fa c = (modify_p old_y mod_y x,(a,modify_w w mod_y x)) --`debug` (show p)
+modify_wp (p,(a,w)) fa c = (modify_p old_y mod_y x,(a,modify_w w mod_y x))
                             where   x = hopcroftX (fa_trans fa) c a
                                     mod_y = filterY p x
                                     old_y = Set.difference p mod_y
@@ -122,7 +123,10 @@ modify_wp (p,(a,w)) fa c = (modify_p old_y mod_y x,(a,modify_w w mod_y x)) --`de
 modify_p:: Set.Set(Set.Set State) -> Set.Set(Set.Set State) -> Set.Set State -> Set.Set(Set.Set State)
 modify_p old_y mod_y x = Set.union old_y (replaceY mod_y x)
 
-modify_w w mod_y x = Set.map cond mod_y
+modify_w:: Set.Set(Set.Set State) -> Set.Set(Set.Set State) -> Set.Set State -> Set.Set(Set.Set State)
+modify_w w mod_y x
+    | (Set.size mod_y)==0 = w
+    | otherwise = Set.map cond mod_y
                         where cond y = if (elem y w)
                                         then setXor x y
                                         else    if (Set.size(Set.intersection x y) <= Set.size(Set.difference y x))
@@ -164,8 +168,6 @@ main = do
     let fa = parseInput $ lines input
     when (not $ isFaValid fa) $ error "Invalid input!"
     
-    --print $ fa_alpha fa
-    --error "-------"
     if (isArgsMinimize argv) then do
         printFormatFa $ minimizeFa fa
     else
